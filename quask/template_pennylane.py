@@ -183,9 +183,9 @@ def random_qnn_encoding(x, wires, trotter_number=10):
     for _ in range(trotter_number):
         for i in range(len(wires) - 1):
             angle = np.random.normal()
-            qml.RXX(angle, wires=[wires[i], wires[i + 1]])
-            qml.RYY(angle, wires=[wires[i], wires[i + 1]])
-            qml.RZZ(angle, wires=[wires[i], wires[i + 1]])
+            qml.IsingXX(angle, wires=[wires[i], wires[i + 1]])
+            qml.IsingYY(angle, wires=[wires[i], wires[i + 1]])
+            qml.IsingZZ(angle, wires=[wires[i], wires[i + 1]])
 
 
 def projected_xyz_embedding(embedding, X):
@@ -202,11 +202,11 @@ def projected_xyz_embedding(embedding, X):
     N = X.shape[1]
 
     # create device using JAX
-    device = qml.device("default.qubit.jax", wires=N)
+    device = qml.device("default.qubit", wires=N)
 
     # define the circuit for the quantum kernel ("overlap test" circuit)
     @jax.jit
-    @qml.qnode(device)
+    @qml.qnode(device, interface="jax")
     def proj_feature_map(x):
         embedding(x, wires=range(N))
         return (
@@ -218,10 +218,10 @@ def projected_xyz_embedding(embedding, X):
     # build the gram matrix
     X_proj = [proj_feature_map(x) for x in X]
 
-    return X_proj
+    return np.array(X_proj)
 
 
-def pennylane_quantum_kernel(feature_map, X_1, X_2=None):
+def pennylane_quantum_kernel(feature_map, X_1, X_2=None, params=[-1]):
     """
     Create a Quantum Kernel given the template written in Pennylane framework
 
@@ -241,7 +241,7 @@ def pennylane_quantum_kernel(feature_map, X_1, X_2=None):
     N = X_1.shape[1]
 
     # create device using JAX
-    device = qml.device("default.qubit.jax", wires=N)
+    device = qml.device("default.qubit", wires=N)
 
     # create projector (measures probability of having all "00...0")
     projector = np.zeros((2**N, 2**N))
@@ -249,7 +249,7 @@ def pennylane_quantum_kernel(feature_map, X_1, X_2=None):
 
     # define the circuit for the quantum kernel ("overlap test" circuit)
     @jax.jit
-    @qml.qnode(device)
+    @qml.qnode(device, interface="jax")
     def kernel(x1, x2):
         feature_map(x1, wires=range(N))
         qml.adjoint(feature_map)(x2, wires=range(N))
@@ -438,7 +438,7 @@ class PennylaneTrainableKernel:
             None
         """
         N = self.X_train.shape[1]
-        device = qml.device("default.qubit.jax", wires=N)
+        device = qml.device("default.qubit", wires=N)
         embedding_fn = self.get_embedding()
         var_form_fn, params_per_layer = self.get_var_form(N)
 
