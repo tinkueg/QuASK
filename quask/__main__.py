@@ -203,9 +203,9 @@ def preprocess_dataset():
     np.save(f"{save_path}/Y_train.npy", Y_train)
     np.save(f"{save_path}/Y_test.npy", Y_test)
     print(f"Saved file {save_path}/X_train.npy")
-    print(f"Saved file {save_path}/y_train.npy")
+    print(f"Saved file {save_path}/Y_train.npy")
     print(f"Saved file {save_path}/X_test.npy")
-    print(f"Saved file {save_path}/y_test.npy")
+    print(f"Saved file {save_path}/Y_test.npy")
 
 
 @main.command()
